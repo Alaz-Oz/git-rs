@@ -257,7 +257,7 @@ pub(crate) struct GitBlob {
 }
 #[derive(Debug)]
 pub(crate) struct GitTree {
-    items: Vec<([u8; 6], String, String)>,
+    pub items: Vec<([u8; 6], String, String)>,
 }
 #[derive(Debug)]
 pub(crate) struct GitCommit {
