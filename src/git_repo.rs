@@ -419,30 +419,30 @@ pub(crate) fn tree_parse(data: &Vec<u8>) -> Vec<([u8; 6], String, String)> {
     list
 }
 
-pub(crate) fn tree_parse_line(data: &[u8]) -> ([u8; 6], String, String) {
-    let (file_info, sha) =
-        data.split_at(data.iter().position(|&x| x == 0).expect("Malformed tree"));
-    let (file_mode, file_path) = file_info.split_at(
-        file_info
-            .iter()
-            .position(|&x| x == b' ')
-            .expect("Malformed tree"),
-    );
-    assert!(file_mode.len() == 5 || file_mode.len() == 6);
-    let mut mode: [u8; 6] = [0; 6];
+// pub(crate) fn tree_parse_line(data: &[u8]) -> ([u8; 6], String, String) {
+//     let (file_info, sha) =
+//         data.split_at(data.iter().position(|&x| x == 0).expect("Malformed tree"));
+//     let (file_mode, file_path) = file_info.split_at(
+//         file_info
+//             .iter()
+//             .position(|&x| x == b' ')
+//             .expect("Malformed tree"),
+//     );
+//     assert!(file_mode.len() == 5 || file_mode.len() == 6);
+//     let mut mode: [u8; 6] = [0; 6];
 
-    mode[if file_mode.len() == 6 { 0 } else { 1 }..].copy_from_slice(file_mode);
+//     mode[if file_mode.len() == 6 { 0 } else { 1 }..].copy_from_slice(file_mode);
 
-    let file_path = String::from_utf8(file_path.into()).expect("Malformed tree");
-    let sha = format!(
-        "{:0>40}",
-        sha.iter()
-            .map(|ch| format!("{:02x}", ch))
-            .collect::<String>()
-    );
+//     let file_path = String::from_utf8(file_path.into()).expect("Malformed tree");
+//     let sha = format!(
+//         "{:0>40}",
+//         sha.iter()
+//             .map(|ch| format!("{:02x}", ch))
+//             .collect::<String>()
+//     );
 
-    (mode, file_path, sha)
-}
+//     (mode, file_path, sha)
+// }
 
 pub(crate) fn tree_serialize(list: &mut Vec<([u8; 6], String, String)>) -> Vec<u8> {
     // Sort the list
@@ -479,9 +479,15 @@ pub(crate) fn tree_serialize(list: &mut Vec<([u8; 6], String, String)>) -> Vec<u
     let mut result: Vec<u8> = Vec::new();
 
     for entry in list {
-        result.copy_from_slice(&entry.0);
+        for ele in entry.0 {
+            result.push(ele);
+        }
+        // result.copy_from_slice(&entry.0);
         result.push(b' ');
-        result.copy_from_slice(entry.1.as_bytes());
+        for ele in entry.1.as_bytes() {
+            result.push(*ele);
+        }
+        // result.copy_from_slice(entry.1.as_bytes());
         result.push(0);
         let mut hex: Vec<u8> = (0..entry.2.len())
             .step_by(2)
@@ -498,27 +504,27 @@ fn test_tree_serializer() {
     data.push((
         [b'1', b'0', 3, 4, 5, 2],
         "README".to_string(),
-        "afafa".to_string(),
+        "afaafa".to_string(),
     ));
     data.push((
         [b'1', b'0', 3, 4, 5, 2],
         "REAME".to_string(),
-        "afafa".to_string(),
+        "afafaa".to_string(),
     ));
     data.push((
         [b'0', b'0', 3, 4, 5, 2],
         "README".to_string(),
-        "afafa".to_string(),
+        "afafaa".to_string(),
     ));
     data.push((
         [b'0', b'0', 3, 4, 5, 2],
         "README".to_string(),
-        "afafa".to_string(),
+        "afafaa".to_string(),
     ));
     data.push((
         [b'0', b'0', 3, 4, 5, 2],
         "README".to_string(),
-        "afafa".to_string(),
+        "afafaa".to_string(),
     ));
 
     println!("{data:#?}");
