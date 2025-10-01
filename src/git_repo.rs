@@ -503,32 +503,35 @@ fn test_tree_serializer() {
     let mut data = Vec::new();
     data.push((
         [b'1', b'0', 3, 4, 5, 2],
-        "README".to_string(),
-        "afaafa".to_string(),
+        "AEADME".to_string(),
+        "29c95630072cd48c6c227938e66681536613f9ad".to_string(),
     ));
     data.push((
         [b'1', b'0', 3, 4, 5, 2],
         "REAME".to_string(),
-        "afafaa".to_string(),
+        "29c95630072cd48c6c227938e66681536613f9ad".to_string(),
     ));
     data.push((
         [b'0', b'0', 3, 4, 5, 2],
         "README".to_string(),
-        "afafaa".to_string(),
+        "29c95630072cd48c6c227938e66681536613f9ad".to_string(),
     ));
     data.push((
         [b'0', b'0', 3, 4, 5, 2],
         "README".to_string(),
-        "afafaa".to_string(),
+        "29c95630072cd48c6c227938e66681536613f9ad".to_string(),
     ));
     data.push((
         [b'0', b'0', 3, 4, 5, 2],
-        "README".to_string(),
-        "afafaa".to_string(),
+        "AEADME".to_string(),
+        "29c95630072cd48c6c227938e66681536613f9ad".to_string(),
     ));
 
     println!("{data:#?}");
     println!("----------------------------------");
-    tree_serialize(&mut data);
+    let x = tree_serialize(&mut data);
+    let y = tree_parse(&x);
+
+    println!("{y:#?}");
     todo!()
 }
