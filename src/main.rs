@@ -40,9 +40,15 @@ enum Commands {
         #[arg(help = "tree object to start from")]
         tree: String,
     },
+    #[command(about = "Checkout the specific version from the git history to the given path")]
+    Checkout {
+        #[arg(help = "The commit or tree to checkout")]
+        commit: String,
+        #[arg(help = "The path where to store those files")]
+        path: String,
+    },
     // Add,
     // CheckIgnore,
-    // Checkout,
     // Commit,
     // LsFiles,
     // RevParse,
@@ -64,6 +70,7 @@ fn main() {
         } => oz::cmd_hash_object(write, file_type, file_path),
         Commands::Log { commit } => oz::cmd_log(commit),
         Commands::LsTree { recursive, tree } => oz::cmd_list_tree(recursive, tree),
+        Commands::Checkout { commit, path } => oz::cmd_checkout(commit, path),
     };
     if let Err(e) = result {
         eprintln!("Error: {}", e);

@@ -1,11 +1,16 @@
 mod commands;
 mod git_repo;
 
-use std::{collections::HashSet, hash::Hash};
+use std::{
+    collections::HashSet,
+    fs,
+    hash::Hash,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     commands::{cat_file, hash_object, repo_create, repo_find},
-    git_repo::{GitObject, GitRepository, log_graphviz},
+    git_repo::{GitObject, GitRepository, GitTree, log_graphviz},
 };
 
 pub fn cmd_init(path: String) -> Result<(), String> {
@@ -91,4 +96,65 @@ pub(self) fn ls_tree(repo: &GitRepository, tree: String, recursive: bool, prefix
             }
         }
     }
+}
+
+pub fn cmd_checkout(commit: String, path: String) -> Result<(), String> {
+    let repo = repo_find()?;
+    let sha = repo.object_find(commit, "".to_string());
+    let obj = repo
+        .object_read(&sha)
+        .ok_or("Unable to read the git object")?;
+    let tree = match obj {
+        GitObject::Tree(tree) => tree,
+        GitObject::Commit(commit) => {
+            let hash = commit
+                .data
+                .get("tree")
+                .ok_or("Malformed Commit")?
+                .first()
+                .ok_or("Malformed Commit")?;
+            let obj = repo.object_read(hash).ok_or("Unable to read the tree")?;
+            if let GitObject::Tree(tree) = obj {
+                tree
+            } else {
+                Err("Expected tree")?
+            }
+        }
+        _ => Err("Expected commit or tree")?,
+    };
+
+    let path: PathBuf = path.into();
+    if path.exists() {
+        // Exist
+        if !path.is_dir() {
+            Err("Not a directory")?;
+        }
+        if path.read_dir().map_err(|_| "Unable to read dir")?.count() > 0 {
+            Err("The directory is not empty")?;
+        }
+    } else {
+        // Need to create one
+        fs::create_dir_all(&path).map_err(|_| "Failed to create the directory")?;
+    }
+
+    checkout_tree(&repo, &tree, &path)?;
+    Ok(())
+}
+
+fn checkout_tree(repo: &GitRepository, tree: &GitTree, path: &Path) -> Result<(), String> {
+    for items in &tree.items {
+        let obj = repo.object_read(&items.2).ok_or("Can't read object")?;
+        let path = path.join(&items.1);
+        match obj {
+            GitObject::Blob(blob) => {
+                fs::write(path, blob.buffer).map_err(|_| "Can't write into the file")?;
+            }
+            GitObject::Tree(tree) => {
+                fs::create_dir(&path).map_err(|_| "Failed to create the directory")?;
+                checkout_tree(repo, &tree, &path)?;
+            }
+            _ => Err("Malformed tree")?,
+        }
+    }
+    Ok(())
 }

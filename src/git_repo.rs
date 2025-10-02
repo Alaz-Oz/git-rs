@@ -253,15 +253,15 @@ impl Serializable for GitObject {
 
 #[derive(Debug)]
 pub(crate) struct GitBlob {
-    buffer: Vec<u8>,
+    pub(crate) buffer: Vec<u8>,
 }
 #[derive(Debug)]
 pub(crate) struct GitTree {
-    pub items: Vec<([u8; 6], String, String)>,
+    pub(crate) items: Vec<([u8; 6], String, String)>,
 }
 #[derive(Debug)]
 pub(crate) struct GitCommit {
-    data: IndexMap<String, Vec<String>>,
+    pub(crate) data: IndexMap<String, Vec<String>>,
 }
 #[derive(Debug)]
 pub(crate) struct GitTag {
