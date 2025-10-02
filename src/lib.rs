@@ -150,7 +150,9 @@ fn checkout_tree(repo: &GitRepository, tree: &GitTree, path: &Path) -> Result<()
                 fs::write(path, blob.buffer).map_err(|_| "Can't write into the file")?;
             }
             GitObject::Tree(tree) => {
+                // if !path.is_dir() {
                 fs::create_dir(&path).map_err(|_| "Failed to create the directory")?;
+                // }
                 checkout_tree(repo, &tree, &path)?;
             }
             _ => Err("Malformed tree")?,
