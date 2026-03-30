@@ -10,16 +10,25 @@ use std::{
 
 #[derive(Debug)]
 pub struct GitRepository {
+    /// The working directory that is being versioned
     pub(super) worktree: PathBuf,
+
+    /// The `.git` folder
     pub(super) git_dir: PathBuf,
+
+    /// The config
     pub(super) conf: Ini,
 }
 
 impl GitRepository {
+    /// Returns the file in the `.git` directory
     pub(crate) fn repo_file(&self, file: PathBuf) -> PathBuf {
         self.git_dir.join(file)
     }
 
+    /// Returns the directory in the `.git` directory.
+    ///
+    /// It may return err if the path is non-existant or not a directory
     pub(crate) fn repo_dir(&self, dir: String) -> Result<PathBuf, String> {
         let dir = self.git_dir.join(dir);
         if dir.is_dir() {
@@ -28,6 +37,8 @@ impl GitRepository {
             Err("No Dir".to_string())
         }
     }
+
+    /// Creates new instance of GitRepository to work with
     pub(crate) fn new(path: PathBuf, no_check: bool) -> Result<Self, String> {
         let worktree = path;
         let git_dir = worktree.join(".git");
@@ -52,11 +63,13 @@ impl GitRepository {
         })
     }
 
+    /// Creates repository in the current GitRepository context
     pub(crate) fn create_repo_dir(&self, path: PathBuf) -> Result<(), String> {
         std::fs::create_dir_all(self.git_dir.join(&path))
             .map_err(|_| format!("Unable to create dir: {path:?}"))
     }
 
+    /// Returns default config
     pub(crate) fn default_config() -> Ini {
         let mut x = Ini::new();
         x.set("core", "repositoryformatversion", Some("0".into()));
@@ -65,6 +78,7 @@ impl GitRepository {
         x
     }
 
+    /// Reads the git object provided from the disk and returns a GitObject
     pub(crate) fn object_read(&self, sha: &str) -> Option<GitObject> {
         let path = self.repo_file(["objects", &sha[0..2], &sha[2..]].iter().collect());
         if !path.is_file() {
@@ -113,6 +127,9 @@ impl GitRepository {
         })
     }
 
+    /// Writes the GitObject onto the disk **only if** repo is provided
+    ///
+    /// Returns `hash` regardless
     pub(crate) fn object_write(
         repo: Option<GitRepository>,
         object: GitObject,
@@ -162,12 +179,15 @@ impl GitRepository {
         return Ok(digest);
     }
 
+    /// Returns the name of the object as in `.git` directory
     pub(crate) fn object_find(&self, name: String, fmt: String) -> String {
         name
     }
 }
 
-// Note: Could be optimized.
+/// Converts byte-sequence into Key Value pair as in git commit
+/// ---
+/// # Note: Could be optimized.
 pub(crate) fn kv_parser(data: Vec<u8>) -> Result<IndexMap<String, Vec<String>>, String> {
     let data: String = String::from_utf8(data).map_err(|err| err.to_string())?;
 
@@ -197,6 +217,7 @@ pub(crate) fn kv_parser(data: Vec<u8>) -> Result<IndexMap<String, Vec<String>>, 
     Ok(map)
 }
 
+/// Converts Key Value pair as in git commit into byte-sequence
 pub(crate) fn kv_serialize(map: IndexMap<String, Vec<String>>) -> Vec<u8> {
     let null = "\x00";
     let mut val = String::new();
@@ -224,7 +245,9 @@ pub(crate) fn kv_serialize(map: IndexMap<String, Vec<String>>) -> Vec<u8> {
 }
 
 pub(crate) trait Serializable {
+    /// Changing to byte-sequence for writing to the file
     fn serialize(self) -> Vec<u8>;
+    /// Changing to Object for interacting with the object
     fn deserialize(&mut self, data: Vec<u8>);
 }
 
@@ -383,6 +406,7 @@ pub fn log_graphviz(
     Ok(())
 }
 
+/// Creates tree vector from the bytes
 pub(crate) fn tree_parse(data: &Vec<u8>) -> Vec<([u8; 6], String, String)> {
     let mut list = Vec::new();
     let mut i = 0;
@@ -444,6 +468,7 @@ pub(crate) fn tree_parse(data: &Vec<u8>) -> Vec<([u8; 6], String, String)> {
 //     (mode, file_path, sha)
 // }
 
+/// Serializes the tree vector into bytes
 pub(crate) fn tree_serialize(list: &mut Vec<([u8; 6], String, String)>) -> Vec<u8> {
     // Sort the list
     list.sort_by(|a, b| {
@@ -527,11 +552,8 @@ fn test_tree_serializer() {
         "29c95630072cd48c6c227938e66681536613f9ad".to_string(),
     ));
 
-    println!("{data:#?}");
-    println!("----------------------------------");
     let x = tree_serialize(&mut data);
     let y = tree_parse(&x);
 
-    println!("{y:#?}");
-    todo!()
+    assert_eq!(data, y);
 }

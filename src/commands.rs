@@ -3,6 +3,8 @@ use crate::git_repo::{
 };
 use std::path::PathBuf;
 
+/// Creates a repository
+/// - path: The path for creating repository
 pub(crate) fn repo_create(path: PathBuf) -> Result<GitRepository, String> {
     let repo = GitRepository::new(path.into(), true).unwrap();
     if repo.worktree.exists() {
@@ -44,6 +46,7 @@ pub(crate) fn repo_create(path: PathBuf) -> Result<GitRepository, String> {
     Ok(repo)
 }
 
+/// Finds the `.git` folder by looking up the folder
 pub(crate) fn repo_find() -> Result<GitRepository, String> {
     // Finds the .git folder for the current dir
     let mut node: PathBuf = ".".into();
@@ -57,6 +60,10 @@ pub(crate) fn repo_find() -> Result<GitRepository, String> {
     return Err("Not a .git repository (or any of the parent directories): .git".to_string());
 }
 
+/// Prints the git objects provided
+/// - repo: The repository in question
+/// - sha: The hash of the object (used to find the object in the repo)
+/// - obj_type: The type of the object (used to find the object in the repo)
 pub(crate) fn cat_file(repo: GitRepository, sha: String, obj_type: String) -> Result<(), String> {
     let obj = GitRepository::object_read(&repo, &repo.object_find(sha, obj_type))
         .ok_or("Unable to read Object")?;
@@ -66,6 +73,10 @@ pub(crate) fn cat_file(repo: GitRepository, sha: String, obj_type: String) -> Re
     Ok(())
 }
 
+/// Returns the hash of the object
+///
+/// ---
+/// TODO: This could be simplified
 pub(crate) fn hash_object(
     repo: Option<GitRepository>,
     obj_type: String,
