@@ -434,7 +434,7 @@ pub(crate) fn tree_parse(data: &Vec<u8>) -> Vec<([u8; 6], String, String)> {
                 .position(|&ch| ch == b' ')
                 .expect("Malformed tree"),
         );
-        let mut file_mode: [u8; 6] = [0; 6];
+        let mut file_mode: [u8; 6] = [b'0'; 6];
         file_mode[if m.len() == 6 { 0 } else { 1 }..].copy_from_slice(m);
         let path = String::from_utf8(path[1..].into()).expect("Malformed tree");
         list.push((file_mode, path, sha));
