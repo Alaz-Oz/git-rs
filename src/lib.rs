@@ -2,7 +2,7 @@ mod commands;
 mod git_repo;
 
 use std::{
-    collections::HashSet,
+    collections::{BTreeMap, HashSet},
     fs,
     hash::Hash,
     path::{Path, PathBuf},
@@ -157,6 +157,14 @@ fn checkout_tree(repo: &GitRepository, tree: &GitTree, path: &Path) -> Result<()
             }
             _ => Err("Malformed tree")?,
         }
+    }
+    Ok(())
+}
+
+pub fn cmd_show_ref() -> Result<(), String> {
+    let repo = repo_find()?;
+    for (k, v) in repo.ref_list(None) {
+        println!("{} {}", v, k);
     }
     Ok(())
 }

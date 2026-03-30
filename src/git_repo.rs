@@ -3,10 +3,14 @@ use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use indexmap::IndexMap;
 use sha1::{Digest, Sha1};
 use std::{
-    collections::HashSet,
+    collections::{BTreeMap, HashMap, HashSet},
+    fs::{self, DirEntry},
     io::{Read, Write},
-    path::PathBuf,
+    iter::Map,
+    path::{self, PathBuf},
 };
+
+use crate::commands::repo_find;
 
 #[derive(Debug)]
 pub struct GitRepository {
@@ -182,6 +186,59 @@ impl GitRepository {
     /// Returns the name of the object as in `.git` directory
     pub(crate) fn object_find(&self, name: String, fmt: String) -> String {
         name
+    }
+
+    /// Resolve the indirect ref to a direct commit
+    pub(crate) fn resolve_ref(&self, reference: PathBuf) -> Option<String> {
+        let reference = if reference.starts_with(&self.git_dir) {
+            reference // Already a git dir reference
+        } else {
+            self.repo_file(reference)
+        };
+
+        if !reference.is_file() {
+            return None;
+        }
+
+        let mut content = fs::read_to_string(reference).expect("Broken reference");
+        content.pop();
+        if content.starts_with("ref: ") {
+            self.resolve_ref(content[5..].into())
+        } else {
+            Some(content)
+        }
+    }
+
+    pub(crate) fn ref_list(&self, parent_path: Option<PathBuf>) -> BTreeMap<String, String> {
+        let parent_path =
+            parent_path.unwrap_or(self.repo_dir("refs".into()).expect("Broken refs directory"));
+
+        let mut result: BTreeMap<String, String> = BTreeMap::new();
+
+        let dir = fs::read_dir(&parent_path).expect("Error reading the drectory");
+
+        for entry in dir {
+            if let Ok(entry) = entry {
+                let child_path = entry.path();
+                if child_path.is_dir() {
+                    let inner = self.ref_list(Some(child_path));
+                    result.extend(inner);
+                } else {
+                    let key = String::from(
+                        child_path
+                            .strip_prefix(&self.git_dir)
+                            .expect("Error in the path")
+                            .to_str()
+                            .expect("Unsuppported characters"),
+                    );
+
+                    let value = self.resolve_ref(child_path).expect("Broken ref");
+                    result.insert(key, value);
+                }
+            }
+        }
+
+        result
     }
 }
 

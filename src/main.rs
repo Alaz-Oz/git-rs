@@ -47,13 +47,15 @@ enum Commands {
         #[arg(help = "The path where to store those files")]
         path: String,
     },
+
+    #[command(about = "List references")]
+    ShowRef,
     // Add,
     // CheckIgnore,
     // Commit,
     // LsFiles,
     // RevParse,
     // Rm,
-    // ShowRef,
     // Status,
     // Tag,
 }
@@ -71,6 +73,7 @@ fn main() {
         Commands::Log { commit } => oz::cmd_log(commit),
         Commands::LsTree { recursive, tree } => oz::cmd_list_tree(recursive, tree),
         Commands::Checkout { commit, path } => oz::cmd_checkout(commit, path),
+        Commands::ShowRef => oz::cmd_show_ref(),
     };
     if let Err(e) = result {
         eprintln!("Error: {}", e);
